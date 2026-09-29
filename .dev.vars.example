@@ -1,0 +1,5 @@
+# Local development only. Do not set DEV_USER_EMAIL in production.
+DEV_USER_EMAIL=developer@example.test
+# TEAM_DOMAIN=https://YOUR-TEAM.cloudflareaccess.com
+# POLICY_AUD=YOUR-PROPOSAL-APPLICATION-AUDIENCE
+# APPROVER_EMAILS=approver@example.com

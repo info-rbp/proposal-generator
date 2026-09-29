@@ -1,0 +1,5 @@
+import type { DocumentData } from '../../shared/model';
+export interface Recovery{key:string;owner:string;id:string;baseVersion:number;data:DocumentData;editedAt:string}
+const open=()=>new Promise<IDBDatabase>((resolve,reject)=>{const r=indexedDB.open('proposal-generator-recovery-v1',1);r.onupgradeneeded=()=>r.result.createObjectStore('drafts',{keyPath:'key'});r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
+async function op<T>(mode:IDBTransactionMode,fn:(s:IDBObjectStore)=>IDBRequest){const db=await open();try{return await new Promise<T>((resolve,reject)=>{const tx=db.transaction('drafts',mode),r=fn(tx.objectStore('drafts'));tx.oncomplete=()=>resolve(r.result as T);tx.onerror=()=>reject(tx.error)})}finally{db.close()}}
+export const cache={put:(r:Omit<Recovery,'key'>)=>op<void>('readwrite',s=>s.put({...r,key:`${r.owner.toLowerCase()}:${r.id}`})),get:(owner:string,id:string)=>op<Recovery|undefined>('readonly',s=>s.get(`${owner.toLowerCase()}:${id}`)),remove:(owner:string,id:string)=>op<void>('readwrite',s=>s.delete(`${owner.toLowerCase()}:${id}`))};

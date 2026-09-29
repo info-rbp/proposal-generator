@@ -1,0 +1,5 @@
+export class ApiError extends Error{constructor(message:string,public status:number){super(message)}}
+export async function api<T>(path:string,init?:RequestInit):Promise<T>{const h=new Headers(init?.headers);if(typeof init?.body==='string')h.set('Content-Type','application/json');const r=await fetch(`/api${path}`,{...init,headers:h,credentials:'same-origin'});const type=r.headers.get('content-type')||'';if(!type.includes('application/json'))throw new ApiError('Session expired or API unavailable. Reload before continuing.',r.status);const body=await r.json() as {error?:string};if(!r.ok)throw new ApiError(body.error||'Request failed',r.status);return body as T}
+export const json=(v:unknown)=>JSON.stringify(v);
+export const safeName=(s:string)=>s.replace(/[^a-zA-Z0-9._-]+/g,'_').slice(0,120)||'document';
+export function download(blob:Blob,name:string){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),30000)}
