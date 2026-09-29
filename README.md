@@ -2,14 +2,15 @@
 
 Standalone proposal, tender-response, RFQ and capability-statement builder for Remote Business Partner. It reuses the proven workflow patterns from `info-rbp/Property-Report-Tool` without sharing its production database, R2 bucket or Cloudflare Access application.
 
-## V1 workflow
-1. Create a proposal, tender response, RFQ or capability statement.
-2. Complete client details and structured narrative sections.
-3. Build pricing with quantity, rate, discount, tax and optional items.
-4. For tenders, record closing instructions and a requirement-by-requirement compliance register.
-5. Upload supporting PDF, Word, Excel or image attachments.
-6. Move a complete draft through review and approval, then issue an immutable PDF snapshot.
-7. Create a new revision when issued material must change.
+## Core workflow
+1. Maintain reusable brand profiles, client records and versioned templates.
+2. Create documents through Brand → Client → Template, which snapshots the selected master data into the draft.
+3. Complete client-specific details and structured narrative sections.
+4. Build pricing with quantity, rate, discount, tax and optional items.
+5. For tenders, record closing instructions and a requirement-by-requirement compliance register.
+6. Upload supporting PDF, Word, Excel or image attachments.
+7. Move a complete draft through review and approval, then issue an immutable PDF snapshot.
+8. Create a new revision when issued material must change.
 
 ## Architecture
 - React + Vite UI
@@ -49,3 +50,19 @@ Replace the all-zero `database_id` placeholder in `wrangler.jsonc`. Create a sep
 - Attachments are MIME allow-listed and capped at 25 MB.
 - Audit events record create, save, status, attachment, revision and issue actions.
 - V1 excludes AI drafting, automatic tender extraction, email sending, e-signature and external client portals.
+
+
+## Reusable master data
+- **Brands:** internal or client brand profiles with legal/contact details, colours, typography preferences, cover style, default terms and immutable R2 logo assets.
+- **Clients:** organisation/contact details, default brand, currency, proposal validity, payment terms, tags, account manager and internal notes.
+- **Templates:** editable, versioned master templates with brand/client scoping, default sections, pricing and commercial terms.
+- **Client template variants:** clone a master template into an independent client-specific version while retaining the parent relationship.
+- **Document snapshots:** created documents retain the exact brand, client and template version used at creation, so later master-data edits do not rewrite historical proposals.
+- **Future library schema:** D1 tables are prepared for reusable content, clauses and pricing items.
+
+## Database migrations
+After pulling a release that adds migrations, apply them before using the new UI:
+```bash
+bun run db:migrate:remote
+```
+Migration `0002_master_data.sql` adds brands, clients, templates, content library, clause library and pricing library tables.
