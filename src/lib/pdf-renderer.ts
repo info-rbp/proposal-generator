@@ -142,24 +142,27 @@ export async function renderPdf(d: DocumentData, logo: PdfLogo | null = null): P
   }
 
   function subheading(title: string): void {
-    ensure(18);
-    y += 4.0;
     setText(11.2, true, colours.accent);
     const lines = pdf.splitTextToSize(printable(title), WIDTH) as string[];
+    // Keep the heading with at least the first two lines of its content.
+    ensure(4 + lines.length * 5 + 2.1 + 11);
+    y += 4.0;
     pdf.text(lines, LEFT, y, { lineHeightFactor: 1.2 });
     y += lines.length * 5.0 + 2.1;
   }
 
   function majorHeading(title: string, index?: number): void {
-    ensure(24);
+    const titleX = index === undefined ? LEFT : LEFT + 12;
+    setText(17, true, INK);
+    const lines = pdf.splitTextToSize(printable(title), RIGHT - titleX) as string[];
+    // Reserve the full heading, underline, and an opening line before drawing.
+    ensure(3.6 + lines.length * 7.9 + 3 + 8.6 + 11);
     y += 3.6;
     if (index !== undefined) {
       setText(8.3, true, colours.accent);
       pdf.text(String(index + 1).padStart(2, '0'), LEFT, y - 0.5);
     }
-    const titleX = index === undefined ? LEFT : LEFT + 12;
     setText(17, true, INK);
-    const lines = pdf.splitTextToSize(printable(title), RIGHT - titleX) as string[];
     pdf.text(lines, titleX, y, { lineHeightFactor: 1.13 });
     y += lines.length * 7.9 + 3;
     pdf.setDrawColor(colours.accent);
@@ -348,9 +351,8 @@ export async function renderPdf(d: DocumentData, logo: PdfLogo | null = null): P
 
   for (let i = 0; i < d.sections.length; i++) {
     const section = d.sections[i];
-    ensure(24);
-    sectionPages.push({ title: section.title, page: currentPage });
     majorHeading(section.title, i);
+    sectionPages.push({ title: section.title, page: currentPage });
     body(section.body);
     y += 4;
   }
