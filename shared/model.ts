@@ -68,7 +68,21 @@ function scaled(s:string,p:number){const[w,f='']=s.split('.');return BigInt(w)*1
 const round=(n:bigint,d:bigint)=>(n+d/2n)/d;
 const safe=(n:bigint)=>{if(n>BigInt(Number.MAX_SAFE_INTEGER))throw new Error('Amount too large');return Number(n)};
 export function calculateLine(l:PriceLine){const p=priceSchema.parse(l);const gross=round(scaled(p.quantity,3)*scaled(p.rate,2),1000n),discount=round(gross*BigInt(p.discountBps),10000n),net=gross-discount,tax=round(net*BigInt(p.taxBps),10000n);return{net:safe(net),tax:safe(tax),total:safe(net+tax)}}
-export function totals(lines:PriceLine[]){let net=0n,tax=0n;for(const l of lines.filter(x=>!x.optional)){const t=calculateLine(l);net+=BigInt(t.net);tax+=BigInt(t.tax)}return{net:safe(net),tax:safe(tax),total:safe(net+tax)}}
+export function totals(lines:PriceLine[]){
+  let net=0n;
+  const taxBuckets=new Map<number,bigint>();
+  for(const l of lines.filter(x=>!x.optional)){
+    const parsed=priceSchema.parse(l);
+    const lineNet=BigInt(calculateLine(parsed).net);
+    net+=lineNet;
+    taxBuckets.set(parsed.taxBps,(taxBuckets.get(parsed.taxBps)||0n)+lineNet);
+  }
+  // Calculate tax once on the aggregated taxable base per rate. This avoids
+  // accumulating one-cent differences across individually rounded lines.
+  let tax=0n;
+  for(const [basis,bucket] of taxBuckets)tax+=round(bucket*BigInt(basis),10000n);
+  return{net:safe(net),tax:safe(tax),total:safe(net+tax)}
+}
 export const money=(c:number,currency='AUD')=>new Intl.NumberFormat('en-AU',{style:'currency',currency,currencyDisplay:'code'}).format(c/100);
 export function finalIssues(d:DocumentData,attachments:Attachment[]=[]){
   const parsed=documentSchema.safeParse(d);if(!parsed.success)return parsed.error.issues.map(i=>`${i.path.join('.')}: ${i.message}`);

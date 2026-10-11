@@ -15,3 +15,12 @@ jobs:
       - run: bun test
       - run: bun run build
       - run: bun run deploy:check
+      - name: Render synthetic PDF for visual QA
+        if: github.event_name == 'pull_request'
+        run: bun run tests/pdf-preview.ts
+      - uses: actions/upload-artifact@v4
+        if: github.event_name == 'pull_request'
+        with:
+          name: proposal-pdf-layout-preview
+          path: artifacts/pdf-layout-preview.pdf
+          retention-days: 3
