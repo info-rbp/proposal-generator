@@ -302,7 +302,7 @@ export async function renderPdf(d: DocumentData, logo: PdfLogo | null = null): P
   pdf.setFillColor(colours.primary);
   pdf.rect(0, 12, 210, 3.5, 'F');
   setText(15, true, INK);
-  const brandLines = pdf.splitTextToSize(printable(d.business.name || d.business.legalName), 113) as string[];
+  const brandLines = pdf.splitTextToSize(printable(d.business.name || d.business.legalName || 'Business'), 113) as string[];
   pdf.text(brandLines.slice(0, 2), LEFT, 36, { lineHeightFactor: 1.1 });
   if (logo) {
     try {
