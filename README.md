@@ -65,4 +65,8 @@ After pulling a release that adds migrations, apply them before using the new UI
 ```bash
 bun run db:migrate:remote
 ```
-Migration `0002_master_data.sql` adds brands, clients, templates, content library, clause library and pricing library tables.
+Migration `0002_master_data.sql` adds brands, clients, templates, content library, clause library and pricing library tables. `0003_repair_master_data.sql` is an idempotent repair migration for environments where V2 Worker code was deployed before that schema. The Worker also performs a one-time, idempotent schema bootstrap per isolate before serving data APIs, so a missing V2 table self-repairs instead of breaking the application.
+
+
+### Deployment order
+For manual deployments, `bun run deploy` now runs the remote D1 migrations before `wrangler deploy`. Cloudflare Workers Builds may still deploy code directly with `wrangler deploy`, so the runtime schema bootstrap is retained as a safety net against schema drift.
