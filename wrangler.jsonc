@@ -9,14 +9,19 @@
     "nodejs_compat"
   ],
 
-  // Preserve variables configured directly in the Cloudflare dashboard.
   "keep_vars": true,
 
-  // Cloudflare Access runtime configuration.
   "vars": {
     "TEAM_DOMAIN": "https://delicate-dream-e4c9.cloudflareaccess.com",
     "POLICY_AUD": "3c44c9a44d3b3aab7071540ff31f5b6b5543e4869b56d4658ca59529e9350459"
   },
+
+  "routes": [
+    {
+      "pattern": "proposal.studio.remotebusinesspartner.com.au",
+      "custom_domain": true
+    }
+  ],
 
   "assets": {
     "directory": "./dist",
