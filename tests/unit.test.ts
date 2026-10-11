@@ -34,7 +34,7 @@ test('PDF renderer accepts long titles, multipage narrative and long multi-colum
  d.client.name='Universal Construction';
  d.business.name='Janix';
  d.preparedBy='Jason Ross';
- const longText=Array(100).fill('Construction-complete zones are cleaned in a controlled sequence with supervisor sign-off and documented handover.').join(' ');
+ const longText=Array(240).fill('Construction-complete zones are cleaned in a controlled sequence with supervisor sign-off and documented handover.').join(' ');
  d.sections=[
   {id,title:'Methodology and controlled area release',required:true,body:'Steps | Activity | Controls\n1 | Pre-start | Verify school access and chemical storage.\n2 | Quality assurance | Complete room-by-room sign-off.\n\n'+longText},
   {id:'00000000-0000-4000-8000-000000000002',title:'Resource plan',required:true,body:'Category | Hours | Rate | Notes\nGeneral cleaners | 636 | $66.56 | School areas and builder cleaning.\nSupervisor | 138 | $69.65 | Oversight and compliance.'}
