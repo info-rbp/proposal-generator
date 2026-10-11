@@ -1,7 +1,6 @@
 -- Repair migration for environments where V2 Worker code was deployed before the master-data schema.
 -- Idempotent by design: safe if 0002_master_data.sql already created some or all objects.
 
-PRAGMA foreign_keys=ON;
 
 CREATE TABLE IF NOT EXISTS brands(
   id TEXT PRIMARY KEY,
