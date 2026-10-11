@@ -1,1 +1,47 @@
-{"$schema":"node_modules/wrangler/config-schema.json","name":"proposal-generator","main":"worker/index.ts","compatibility_date":"2026-09-29","compatibility_flags":["nodejs_compat"],"assets":{"directory":"./dist","binding":"ASSETS","not_found_handling":"single-page-application","run_worker_first":true},"d1_databases":[{"binding":"DB","database_name":"proposal-generator","database_id":"06d03083-257c-4187-ad88-f207dfd0c401","migrations_dir":"migrations"}],"r2_buckets":[{"binding":"DOCUMENT_STORAGE","bucket_name":"proposal-generator-documents"}],"observability":{"enabled":true}}
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+
+  "name": "proposal-generator",
+  "main": "worker/index.ts",
+
+  "compatibility_date": "2026-09-29",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+
+  // Preserve variables configured directly in the Cloudflare dashboard.
+  "keep_vars": true,
+
+  // Cloudflare Access runtime configuration.
+  "vars": {
+    "TEAM_DOMAIN": "https://delicate-dream-e4c9.cloudflareaccess.com",
+    "POLICY_AUD": "3c44c9a44d3b3aab7071540ff31f5b6b5543e4869b56d4658ca59529e9350459"
+  },
+
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": true
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "proposal-generator",
+      "database_id": "06d03083-257c-4187-ad88-f207dfd0c401",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  "r2_buckets": [
+    {
+      "binding": "DOCUMENT_STORAGE",
+      "bucket_name": "proposal-generator-documents"
+    }
+  ],
+
+  "observability": {
+    "enabled": true
+  }
+}
