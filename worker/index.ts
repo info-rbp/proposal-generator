@@ -1,6 +1,7 @@
 import{createRemoteJWKSet,jwtVerify}from'jose';
 import{brandInputSchema,clientInputSchema,documentSchema,finalIssues,templateInputSchema,totals,type Attachment,type BrandRecord,type ClientRecord,type DocumentRecord,type DocumentSummary,type Status,type TemplateRecord}from'../shared/model';
 import{documentFromTemplate}from'../shared/templates';
+import{ensureMasterDataSchema}from'./schema';
 
 interface Env{DB:D1Database;DOCUMENT_STORAGE:R2Bucket;ASSETS:{fetch(request:Request):Promise<Response>};TEAM_DOMAIN?:string;POLICY_AUD?:string;DEV_USER_EMAIL?:string;APPROVER_EMAILS?:string}
 const JWK=new Map<string,ReturnType<typeof createRemoteJWKSet>>();
@@ -169,6 +170,7 @@ async function masterApi(req:Request,env:Env,email:string,p:string,m:string){
 
 async function api(req:Request,env:Env,email:string){
   const u=new URL(req.url),p=u.pathname,m=req.method;if(p==='/api/me'&&m==='GET')return reply({email});
+  await ensureMasterDataSchema(env.DB);
   const master=await masterApi(req,env,email,p,m);if(master)return master;
 
   if(p==='/api/documents'&&m==='GET'){
