@@ -47,3 +47,26 @@ test('PDF renderer accepts long titles, multipage narrative and long multi-colum
  const pages=raw.match(/\/Type\s*\/Page\b/g)||[];
  assert.ok(pages.length>=5,'Long narrative should flow across pages rather than being lost.');
 });
+
+test('independent commercial options do not combine prices and retain their own terms',()=>{
+ const d=blankDocument('proposal');d.title='Two offers';d.reference='TWO-1';d.preparedBy='Test';d.client.name='Client';d.sections.forEach(x=>x.body='Complete');
+ const a='00000000-0000-4000-8000-000000000101',b='00000000-0000-4000-8000-000000000102';
+ d.commercialOptions=[
+  {id:a,title:'Subscription',model:'subscription',pricingMode:'committed',summary:'',scope:'Defined support',exclusions:'',paymentTerms:'Monthly in advance',billingNotes:'',recommended:true,lines:[{id:'00000000-0000-4000-8000-000000000111',description:'Property',unit:'property',quantity:'100',rate:'50.00',discountBps:0,taxBps:1000,optional:false}]},
+  {id:b,title:'PAYG',model:'payg',pricingMode:'rate_card',summary:'',scope:'On demand',exclusions:'',paymentTerms:'Five days from EOM',billingNotes:'',recommended:false,lines:[{id:'00000000-0000-4000-8000-000000000112',description:'Routine inspection',unit:'inspection',quantity:'1',rate:'60.00',discountBps:0,taxBps:1000,optional:false}]}
+ ];
+ d.clauses=[{id:'00000000-0000-4000-8000-000000000123',title:'Confidentiality',body:'Mutual confidentiality',required:true}];
+ d.schedules=[{id:'00000000-0000-4000-8000-000000000124',title:'Service area',body:'Defined suburbs',optionIds:[a,b],required:true}];
+ assert.equal(totals(d.commercialOptions[0].lines).total,550000);
+ assert.equal(totals(d.commercialOptions[1].lines).total,6600);
+ assert.equal(totals(d.lines).total,0);
+ assert.deepEqual(finalIssues(d),[]);
+ assert.equal(d.commercialOptions[0].paymentTerms,'Monthly in advance');
+ assert.equal(d.commercialOptions[1].paymentTerms,'Five days from EOM');
+ const copy=structuredClone(d);assert.equal(copy.schedules?.[0].optionIds.length,2);
+});
+test('proposal review blocks incomplete option payment terms and dangling schedule links',()=>{
+ const d=blankDocument('proposal');d.commercialOptions=[{id:'00000000-0000-4000-8000-000000000105',title:'PAYG',summary:'',model:'payg',pricingMode:'rate_card',lines:[],scope:'',exclusions:'',paymentTerms:'',billingNotes:'',recommended:false}];
+ d.schedules=[{id:'00000000-0000-4000-8000-000000000106',title:'Schedule',body:'Text',optionIds:['00000000-0000-4000-8000-000000000199'],required:false}];
+ assert.ok(finalIssues(d).some(x=>x.includes('removed commercial option')));
+});
