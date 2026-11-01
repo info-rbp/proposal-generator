@@ -296,6 +296,30 @@ export async function renderPdf(d: DocumentData, logo: PdfLogo | null = null): P
     }
   }
 
+  function commercialOffers():void{
+    for(const [index,offer] of (d.commercialOptions||[]).entries()){
+      majorHeading('Commercial option '+(index+1)+': '+offer.title);
+      if(offer.recommended)subheading('Recommended offer');
+      if(offer.summary.trim())body(offer.summary);
+      if(offer.scope.trim()){subheading('Scope and inclusions');body(offer.scope)}
+      if(offer.lines.length){
+        subheading(offer.pricingMode==='rate_card'?'Pay-as-you-go schedule of rates':offer.pricingMode==='illustrative'?'Illustrative pricing':'Option pricing');
+        table(['Description | Quantity / unit | Rate (ex GST) | Amount (ex GST)',...offer.lines.map(line=>[line.description,line.quantity+' '+line.unit,money(Math.round(Number(line.rate)*100),d.currency),money(calculateLine(line).net,d.currency)].join(' | '))]);
+        if(offer.pricingMode==='committed'){
+          const t=totals(offer.lines);
+          table(['Commercial summary | Amount','Subtotal excluding GST | '+money(t.net,d.currency),'GST | '+money(t.tax,d.currency),'Total including GST | '+money(t.total,d.currency)]);
+        }else paragraph('Prices above are per-service rates or illustrative estimates; they are not a committed spend total.');
+      }
+      if(offer.paymentTerms.trim()){subheading('Payment terms — '+offer.title);body(offer.paymentTerms)}
+      if(offer.billingNotes.trim()){subheading('Billing and adjustments');body(offer.billingNotes)}
+      if(offer.exclusions.trim()){subheading('Exclusions');body(offer.exclusions)}
+    }
+  }
+  function legalSchedules():void{
+    if(d.clauses?.length){majorHeading('Terms and conditions');for(const [index,c] of d.clauses.entries()){subheading((index+1)+'. '+c.title);body(c.body)}}
+    if(d.schedules?.length){for(const [index,sch] of d.schedules.entries()){majorHeading('Schedule '+(index+1)+': '+sch.title);if(sch.optionIds.length){const titles=(d.commercialOptions||[]).filter(o=>sch.optionIds.includes(o.id)).map(o=>o.title);paragraph('Applicable options: '+titles.join(', '));}body(sch.body)}}
+  }
+
   // Restrained cover design with readable text even for light-coloured brands.
   pdf.setFillColor(INK);
   pdf.rect(0, 0, 210, 12, 'F');
@@ -364,7 +388,8 @@ export async function renderPdf(d: DocumentData, logo: PdfLogo | null = null): P
     section.body.includes('|') &&
     /total|subtotal|base quotation/i.test(section.body)
   );
-  if (d.lines.length && !authoredPricing) pricing();
+  if (!(d.commercialOptions?.length) && d.lines.length && !authoredPricing) pricing();
+  commercialOffers();
 
   if (d.requirements.length) {
     majorHeading('Tender responses');
@@ -378,6 +403,7 @@ export async function renderPdf(d: DocumentData, logo: PdfLogo | null = null): P
     body(d.terms);
   }
 
+  legalSchedules();
   if (includeContents) {
     pdf.setPage(2);
     setText(9, true, colours.accent);
