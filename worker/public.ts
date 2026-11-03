@@ -42,6 +42,6 @@ export default {async fetch(req:Request,env:SiteEnv){try{
   if(p.startsWith('/api/'))return secure(await publicApi(req,env));
   if(p==='/robots.txt')return secure(new Response('User-agent: *\nDisallow: /\n',{headers:{'Content-Type':'text/plain'}}));
   if(req.method!=='GET'&&req.method!=='HEAD')throw new HttpError('Method not allowed.',405);
-  if(p==='/'||/^\/p\/[0-9a-f]{64}\/?$/.test(p)||p.startsWith('/assets/'))return secure(await env.ASSETS.fetch(req));
+  if(p==='/'||p==='/demo'||/^\/p\/[0-9a-f]{64}\/?$/.test(p)||p.startsWith('/assets/'))return secure(await env.ASSETS.fetch(req));
   throw new HttpError('Not found.',404);
 }catch(e){if(e instanceof HttpError)return secure(jsonReply({error:e.message},e.status));console.error('Public proposal service failure',e instanceof Error?e.name:'error');return secure(jsonReply({error:'The proposal service is temporarily unavailable.'},503))}}} satisfies ExportedHandler<SiteEnv>;

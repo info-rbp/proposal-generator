@@ -1,72 +1,85 @@
-# Proposal Generator
+# Proposal Studio
 
-Standalone proposal, tender-response, RFQ and capability-statement builder for Remote Business Partner. It reuses the proven workflow patterns from `info-rbp/Property-Report-Tool` without sharing its production database, R2 bucket or Cloudflare Access application.
+Web-first proposal, tender-response, RFQ and capability-statement builder for Remote Business Partner. The internal studio and client-facing proposal website share the existing Cloudflare D1 database and R2 storage, but have separate frontends and API boundaries.
+
+## Client experience
+
+Every published proposal has a private, revocable link to a branded **Overview landing page**, followed by configurable tabs. Tabs can show proposal sections, alternative commercial offers, terms and schedules, selected resources, tender responses, a response form or custom content.
+
+The website builder supports reordered tabs and blocks, text, callouts, cards, timelines, FAQs, statistics and owned image attachments. Design settings include colours, typography, spacing, corner styles and landing-page layouts. Reusable website layouts and schema-validated JSON import/export let designs developed in chat be applied without executing arbitrary HTML or JavaScript.
 
 ## Core workflow
-1. Maintain reusable brand profiles, client records and versioned templates.
-2. Create documents through Brand → Client → Template, which snapshots the selected master data into the draft.
-3. Complete client-specific details and structured narrative sections.
-4. Build pricing with quantity, rate, discount, tax and optional items.
-5. For tenders, record closing instructions and a requirement-by-requirement compliance register.
-6. Upload supporting PDF, Word, Excel or image attachments.
-7. Move a complete draft through review and approval, then issue an immutable PDF snapshot.
-8. Create a new revision when issued material must change.
+
+1. Maintain reusable brands, clients and versioned document templates.
+2. Create a commercial document through Brand -> Client -> Template, preserving master-data snapshots.
+3. Complete narrative content, pricing, alternative offers, terms and any tender requirements.
+4. Open **Website builder**, select that document and customise its landing page, tabs and design.
+5. Explicitly select which attachments may be shared. Preview and save the website layout.
+6. Review and approve the document, then publish an immutable website snapshot.
+7. Copy the client link. View recorded responses, replace the link or withdraw access in **Publish & responses**.
+8. Create a new revision when published content or design must change.
+
+PDF and Word exports remain available from Documents & master data. Website publication no longer requires an uploaded PDF. A tender website is not a substitute for submitting the tender through its required procurement channel.
 
 ## Architecture
-- React + Vite UI
-- Cloudflare Worker API
-- D1 canonical document JSON and metadata
-- R2 attachments and issued PDFs
-- Cloudflare Access authentication
-- IndexedDB recovery cache
-- jsPDF PDF generation and `docx` editable Word generation
-- Atomic optimistic locking with `UPDATE ... WHERE version = ?`
 
-## Local setup
+- React + Vite internal studio, Worker `proposal-generator`.
+- Separate React + Vite client frontend, Worker `proposal-client`.
+- Existing D1 canonical documents, master data, website layouts, immutable publications and responses.
+- Existing R2 attachments, brand assets and historical issued PDFs.
+- Cloudflare Access protects internal APIs; the public Worker exposes only token-scoped published proposals.
+- Optimistic version checks and atomic D1 publication updates.
+- Server-side decimal-safe pricing and publication-hash-linked client responses.
+
+Internal domain: `proposal.studio.remotebusinesspartner.com.au`.
+Client domain: `proposals.remotebusinesspartner.com.au`.
+Synthetic, non-commercial demonstration: client domain `/demo`.
+
+No existing drafts are published automatically. Internal notes, design briefs, hidden sections and unselected attachments are excluded from public payloads. Anyone possessing a private proposal link can access that proposal until the link expires or is withdrawn. Client responses are recorded acknowledgements, not independently identity-verified e-signatures. Payment integrations and automatic email notifications are not included.
+
+## Local development
+
 ```bash
 bun install
 cp .dev.vars.example .dev.vars
 bun run db:migrate:local
+bun run build
+# Internal API/static assets
 bunx wrangler dev --local --ip 127.0.0.1 --port 8787
-# second terminal
+# In another terminal: internal UI hot reload
 bun run dev
+# In another terminal: public API/static assets
+bunx wrangler dev --config wrangler.public.jsonc --local --ip 127.0.0.1 --port 8788
+# Optional public UI hot reload in another terminal
+bun run dev:client
 ```
 
-`DEV_USER_EMAIL` is accepted only on localhost.
+`DEV_USER_EMAIL` is accepted only on localhost. For local client-link testing, set `PUBLIC_PROPOSAL_ORIGIN=http://127.0.0.1:8788` in local variables.
 
-## Cloudflare setup before production
-Create dedicated resources; do **not** reuse ProInspect's D1, R2 or Access application:
+## Verification and deployment
+
 ```bash
-bunx wrangler d1 create proposal-generator
-bunx wrangler r2 bucket create proposal-generator-documents
+bun run lint
+bun run test
+bun run build
+bun run deploy:check
+bunx playwright install --with-deps chromium
+bun run test:browser
 ```
-Replace the all-zero `database_id` placeholder in `wrangler.jsonc`. Create a separate Cloudflare Access application, configure `TEAM_DOMAIN`, `POLICY_AUD`, and optionally comma-separated `APPROVER_EMAILS`, then run `bun run db:migrate:remote`.
 
-## Commercial controls
-- Approved and issued revisions cannot be edited in place.
-- Issued PDF bytes are SHA-256 checked before storage.
-- Mandatory tender responses, evidence links, word limits and review flags block progression when incomplete.
-- Pricing is recalculated in the Worker from structured decimal inputs.
-- Attachments are MIME allow-listed and capped at 25 MB.
-- Audit events record create, save, status, attachment, revision and issue actions.
-- V1 excludes AI drafting, automatic tender extraction, email sending, e-signature and external client portals.
+Production deployment from the same checkout:
 
-
-## Reusable master data
-- **Brands:** internal or client brand profiles with legal/contact details, colours, typography preferences, cover style, default terms and immutable R2 logo assets.
-- **Clients:** organisation/contact details, default brand, currency, proposal validity, payment terms, tags, account manager and internal notes.
-- **Templates:** editable, versioned master templates with brand/client scoping, default sections, pricing and commercial terms.
-- **Client template variants:** clone a master template into an independent client-specific version while retaining the parent relationship.
-- **Document snapshots:** created documents retain the exact brand, client and template version used at creation, so later master-data edits do not rewrite historical proposals.
-- **Future library schema:** D1 tables are prepared for reusable content, clauses and pricing items.
-
-## Database migrations
-After pulling a release that adds migrations, apply them before using the new UI:
 ```bash
-bun run db:migrate:remote
+bun run deploy
 ```
-Migration `0002_master_data.sql` adds brands, clients, templates, content library, clause library and pricing library tables. `0003_repair_master_data.sql` is an idempotent repair migration for environments where V2 Worker code was deployed before that schema. The Worker also performs a one-time, idempotent schema bootstrap per isolate before serving data APIs, so a missing V2 table self-repairs instead of breaking the application.
 
+The Cloudflare production Builds trigger must use `bun run deploy:workers` as its deploy command. This applies the additive database migrations and deploys both Workers. Non-production preview builds must not deploy the public production Worker.
 
-### Deployment order
-For manual deployments, `bun run deploy` now runs the remote D1 migrations before `wrangler deploy`. Cloudflare Workers Builds may still deploy code directly with `wrangler deploy`, so the runtime schema bootstrap is retained as a safety net against schema drift.
+Existing installations created without Wrangler migration tracking must first verify and baseline migrations 0001-0003; do not rerun the non-idempotent initial migration over existing tables. Migration 0004 adds the website/publication tables without rewriting existing document data. The internal API also has an idempotent website-schema bootstrap as a safety net.
+
+## Documentation
+
+- [Architecture, security, APIs and operations](docs/WEB-PROPOSALS.md)
+- [Designing proposals from chat](docs/CHAT-DESIGN.md)
+
+The original document editor and API are preserved in `src/DocumentStudio.tsx` and `worker/documents.ts`. Existing brand, client, template, pricing, approval and revision workflows are retained.

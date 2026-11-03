@@ -39,7 +39,7 @@ export type WebsiteConfig = z.infer<typeof websiteSchema>;
 export type SiteTab = z.infer<typeof tabSchema>;
 export type SiteBlock = z.infer<typeof blockSchema>;
 export const newId = () => crypto.randomUUID();
-export function newTab(kind: SiteTab['kind'], label = kind): SiteTab {
+export function newTab(kind: SiteTab['kind'], label: string = kind): SiteTab {
   return {id:newId(),label,kind,enabled:true,sectionIds:[],blocks:[]};
 }
 export function newBlock(kind: SiteBlock['kind']): SiteBlock {
@@ -98,7 +98,9 @@ export function makeSnapshot(d: DocumentData, site: WebsiteConfig, attachments: 
   safeSite.tabs=tabs.map(t=>structuredClone(t));
   const shared=attachments.filter(a=>site.publicAttachmentIds.includes(a.id));
   const sharedIds=new Set(shared.map(a=>a.id));
-  return {schemaVersion:1,revision,publishedAt,document:{kind:d.kind,title:d.title,reference:d.reference,date:d.date,validUntil:d.validUntil,preparedBy:d.preparedBy,currency:d.currency,business:{name:d.business.name,legalName:d.business.legalName,abn:d.business.abn,email:d.business.email,phone:d.business.phone,address:d.business.address},client:{name:d.client.name},sections:d.sections.filter(s=>all||sectionIds.has(s.id)).map(({id,title,body})=>({id,title,body})),lines:has('pricing')?structuredClone(d.lines):[],commercialOptions:has('pricing')?structuredClone(d.commercialOptions||[]):[],terms:has('terms')?d.terms:'',clauses:has('terms')?(d.clauses||[]).map(({id,title,body})=>({id,title,body})):[],schedules:has('terms')?(d.schedules||[]).map(({id,title,body,optionIds})=>({id,title,body,optionIds:[...optionIds]})):[],requirements:has('requirements')?d.requirements.map(({id,reference,question,response,evidenceIds})=>({id,reference,question,response,evidenceIds:evidenceIds.filter(id=>sharedIds.has(id))})):[]},website:safeSite,attachments:shared.map(({id,name,mime,size})=>({id,name,mime,size})),hasLogo:!!(d.business.logoAssetId&&d.source?.brandId),hasPdf};
+  // An old whole-document PDF must not bypass the website's content exclusions.
+  const completeDocumentVisible=d.sections.every(s=>all||sectionIds.has(s.id))&&(!d.requirements.length||has('requirements'))&&(!(d.lines.length||(d.commercialOptions||[]).length)||has('pricing'))&&(!(d.terms||(d.clauses||[]).length||(d.schedules||[]).length)||has('terms'));
+  return {schemaVersion:1,revision,publishedAt,document:{kind:d.kind,title:d.title,reference:d.reference,date:d.date,validUntil:d.validUntil,preparedBy:d.preparedBy,currency:d.currency,business:{name:d.business.name,legalName:d.business.legalName,abn:d.business.abn,email:d.business.email,phone:d.business.phone,address:d.business.address},client:{name:d.client.name},sections:d.sections.filter(s=>all||sectionIds.has(s.id)).map(({id,title,body})=>({id,title,body})),lines:has('pricing')?structuredClone(d.lines):[],commercialOptions:has('pricing')?structuredClone(d.commercialOptions||[]):[],terms:has('terms')?d.terms:'',clauses:has('terms')?(d.clauses||[]).map(({id,title,body})=>({id,title,body})):[],schedules:has('terms')?(d.schedules||[]).map(({id,title,body,optionIds})=>({id,title,body,optionIds:[...optionIds]})):[],requirements:has('requirements')?d.requirements.map(({id,reference,question,response,evidenceIds})=>({id,reference,question,response,evidenceIds:evidenceIds.filter(id=>sharedIds.has(id))})):[]},website:safeSite,attachments:shared.map(({id,name,mime,size})=>({id,name,mime,size})),hasLogo:!!(d.business.logoAssetId&&d.source?.brandId),hasPdf:hasPdf&&site.allowPrint&&completeDocumentVisible};
 }
 export function interpolate(value:string,d:PublicSnapshot['document']):string {
   const fields:Record<string,string>={'title':d.title,'client.name':d.client.name,'business.name':d.business.name,'reference':d.reference,'validUntil':d.validUntil,'preparedBy':d.preparedBy};
