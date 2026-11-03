@@ -10,7 +10,7 @@
   "test:browser":"playwright test",
   "db:migrate:local":"wrangler d1 migrations apply proposal-generator --local",
   "db:migrate:remote":"wrangler d1 migrations apply proposal-generator --remote",
-  "deploy:workers":"wrangler d1 migrations apply proposal-generator --remote && wrangler deploy && wrangler deploy --config wrangler.public.jsonc",
+  "deploy:workers":"wrangler d1 migrations apply proposal-generator --remote && wrangler deploy && env -u WRANGLER_CI_OVERRIDE_NAME -u WRANGLER_CI_MATCH_TAG wrangler deploy --config wrangler.public.jsonc",
   "deploy":"bun run lint && bun run test && bun run build && bun run deploy:workers",
   "deploy:check":"bun run build && wrangler deploy --dry-run && wrangler deploy --config wrangler.public.jsonc --dry-run"
  },
