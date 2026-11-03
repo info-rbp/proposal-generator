@@ -1,20 +1,36 @@
 name: Verify
 on:
   pull_request:
+  workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, 'feature/web-proposals-*']
+permissions:
+  contents: read
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
         with: { bun-version: 1.4.2 }
       - run: bun install
       - run: bun run lint
-      - run: bun test
+      - run: bun run test
       - run: bun run build
-      - run: bun run deploy:check
+      - run: bunx wrangler deploy --dry-run
+      - run: bunx wrangler deploy --config wrangler.public.jsonc --dry-run
+      - run: bunx playwright install --with-deps chromium
+      - run: mkdir -p artifacts && bun run test:browser
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: proposal-website-qa
+          path: |
+            artifacts/website-*.png
+            playwright-report/
+            test-results/
+          retention-days: 3
       - name: Render synthetic PDF for visual QA
         if: github.event_name == 'pull_request'
         run: bun run tests/pdf-preview.ts

@@ -1,0 +1,12 @@
+// Kept byte-for-byte equivalent to migration 0004; the test suite checks parity.
+export const websiteDDL = [
+`CREATE TABLE IF NOT EXISTS proposal_websites(document_id TEXT PRIMARY KEY REFERENCES documents(id),version INTEGER NOT NULL DEFAULT 1,config_json TEXT NOT NULL,updated_at TEXT NOT NULL,updated_by TEXT NOT NULL)`,
+`CREATE TABLE IF NOT EXISTS proposal_publications(id TEXT PRIMARY KEY,document_id TEXT NOT NULL UNIQUE REFERENCES documents(id),share_token TEXT NOT NULL UNIQUE,snapshot_json TEXT NOT NULL,snapshot_sha256 TEXT NOT NULL,assets_json TEXT NOT NULL,site_version INTEGER NOT NULL,published_at TEXT NOT NULL,published_by TEXT NOT NULL,expires_at TEXT NOT NULL,revoked_at TEXT,view_count INTEGER NOT NULL DEFAULT 0,first_viewed_at TEXT,last_viewed_at TEXT)`,
+`CREATE INDEX IF NOT EXISTS proposal_publications_token_idx ON proposal_publications(share_token)`,
+`CREATE TABLE IF NOT EXISTS proposal_responses(id TEXT PRIMARY KEY,publication_id TEXT NOT NULL REFERENCES proposal_publications(id),action TEXT NOT NULL CHECK(action IN ('accepted','declined','changes_requested')),name TEXT NOT NULL,email TEXT NOT NULL,message TEXT NOT NULL,selection_json TEXT NOT NULL,snapshot_sha256 TEXT NOT NULL,idempotency_key TEXT NOT NULL,created_at TEXT NOT NULL,UNIQUE(publication_id,idempotency_key))`,
+`CREATE UNIQUE INDEX IF NOT EXISTS proposal_response_final_idx ON proposal_responses(publication_id) WHERE action IN ('accepted','declined')`,
+`CREATE TABLE IF NOT EXISTS proposal_response_limits(publication_id TEXT PRIMARY KEY REFERENCES proposal_publications(id),window_start INTEGER NOT NULL,attempts INTEGER NOT NULL)`,
+`CREATE TABLE IF NOT EXISTS proposal_website_templates(id TEXT PRIMARY KEY,name TEXT NOT NULL,config_json TEXT NOT NULL,created_at TEXT NOT NULL,created_by TEXT NOT NULL)`
+];
+const ready=new WeakMap<object,Promise<unknown>>();
+export async function ensureWebsiteSchema(db:D1Database){let p=ready.get(db);if(!p){p=db.batch(websiteDDL.map(sql=>db.prepare(sql))).catch(e=>{ready.delete(db);throw e});ready.set(db,p)}await p}
