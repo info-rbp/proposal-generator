@@ -168,7 +168,7 @@ async function masterApi(req:Request,env:Env,email:string,p:string,m:string){
   return null
 }
 
-async function api(req:Request,env:Env,email:string){
+export async function documentsApi(req:Request,env:Env,email:string){
   const u=new URL(req.url),p=u.pathname,m=req.method;if(p==='/api/me'&&m==='GET')return reply({email});
   await ensureMasterDataSchema(env.DB);
   const master=await masterApi(req,env,email,p,m);if(master)return master;
@@ -239,4 +239,4 @@ async function api(req:Request,env:Env,email:string){
   }
   return fail('API route not found',404)
 }
-export default{async fetch(req:Request,env:Env){const u=new URL(req.url);if(!u.pathname.startsWith('/api/'))return env.ASSETS.fetch(req);try{return await api(req,env,await user(req,env))}catch(e){const message=e instanceof Error?e.message:'Request failed';return fail(message,/Authentication|required|Access/.test(message)?401:500)}}}satisfies ExportedHandler<Env>;
+export default{async fetch(req:Request,env:Env){const u=new URL(req.url);if(!u.pathname.startsWith('/api/'))return env.ASSETS.fetch(req);try{return await documentsApi(req,env,await user(req,env))}catch(e){const message=e instanceof Error?e.message:'Request failed';return fail(message,/Authentication|required|Access/.test(message)?401:500)}}}satisfies ExportedHandler<Env>;

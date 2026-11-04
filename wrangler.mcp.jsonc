@@ -1,0 +1,35 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "proposal-chatgpt-mcp",
+  "main": "worker/mcp.ts",
+  "compatibility_date": "2026-09-29",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "workers_dev": true,
+  "vars": {
+    "MCP_RESOURCE": "https://proposal-chatgpt-mcp.delicate-dream-e4c9.workers.dev/mcp"
+  },
+  "kv_namespaces": [
+    {
+      "binding": "OAUTH_KV",
+      "id": "7811883a8f5849589de9671b43107a6b"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "proposal-generator",
+      "database_id": "06d03083-257c-4187-ad88-f207dfd0c401"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "DOCUMENT_STORAGE",
+      "bucket_name": "proposal-generator-documents"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}
