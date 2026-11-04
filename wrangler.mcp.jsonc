@@ -1,0 +1,13 @@
+{
+ "$schema":"node_modules/wrangler/config-schema.json",
+ "name":"proposal-chatgpt-mcp",
+ "main":"worker/mcp.ts",
+ "compatibility_date":"2026-09-29",
+ "compatibility_flags":["nodejs_compat"],
+ "workers_dev":true,
+ "vars":{"MCP_RESOURCE":"https://proposal-chatgpt-mcp.REPLACE_SUBDOMAIN.workers.dev/mcp","ACCESS_ISSUER":"https://delicate-dream-e4c9.cloudflareaccess.com","ACCESS_AUTHORIZATION_URL":"https://delicate-dream-e4c9.cloudflareaccess.com/cdn-cgi/access/sso/oidc/authorize","ACCESS_TOKEN_URL":"https://delicate-dream-e4c9.cloudflareaccess.com/cdn-cgi/access/sso/oidc/token","ACCESS_JWKS_URL":"https://delicate-dream-e4c9.cloudflareaccess.com/cdn-cgi/access/certs"},
+ "kv_namespaces":[{"binding":"OAUTH_KV","id":"REPLACE_OAUTH_KV_ID"}],
+ "d1_databases":[{"binding":"DB","database_name":"proposal-generator","database_id":"06d03083-257c-4187-ad88-f207dfd0c401"}],
+ "r2_buckets":[{"binding":"DOCUMENT_STORAGE","bucket_name":"proposal-generator-documents"}],
+ "observability":{"enabled":true}
+}
