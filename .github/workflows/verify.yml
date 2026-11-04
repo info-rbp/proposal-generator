@@ -20,6 +20,7 @@ jobs:
       - run: bun run build
       - run: bunx wrangler deploy --dry-run
       - run: bunx wrangler deploy --config wrangler.public.jsonc --dry-run
+      - run: bunx wrangler deploy --config wrangler.mcp.jsonc --dry-run
       - run: bunx playwright install --with-deps chromium
       - run: mkdir -p artifacts && bun run test:browser
       - uses: actions/upload-artifact@v4
